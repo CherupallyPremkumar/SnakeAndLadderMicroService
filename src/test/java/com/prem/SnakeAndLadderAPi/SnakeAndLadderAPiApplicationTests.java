@@ -5,8 +5,10 @@ import com.prem.SnakeAndLadderAPi.Pojo.Color;
 import com.prem.SnakeAndLadderAPi.Pojo.Dice;
 import com.prem.SnakeAndLadderAPi.Repo.BoardRepo;
 import com.prem.SnakeAndLadderAPi.Repo.DiceRepo;
+import com.prem.SnakeAndLadderAPi.Repo.GameRepo;
 import com.prem.SnakeAndLadderAPi.Repo.PlayersRepo;
 import com.prem.SnakeAndLadderAPi.Service.BoadService;
+import com.prem.SnakeAndLadderAPi.Service.GameService;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,6 +34,10 @@ class SnakeAndLadderAPiApplicationTests {
     PlayersRepo playersRepo;
     @Mock
     BoardRepo boardRepo;
+    @InjectMocks
+    GameService gameService;
+    @Mock
+    GameRepo gameRepo;
 
     public void setup() {
         MockitoAnnotations.openMocks(this);
@@ -61,5 +67,28 @@ class SnakeAndLadderAPiApplicationTests {
         when(diceRepo.save(any(Dice.class))).thenReturn(dice);
         assertNotNull(boadService.createGame(playerDtos));
     }
+    @Test
+    public void testCreateGamePlayersDto() throws Exception {
+        List<PlayerDto> playerDtoList = new ArrayList<>();
+        Exception exception = assertThrows(Exception.class, () -> gameService.createGame(playerDtoList));
+        assertEquals("players list is empty", exception.getMessage());
+    }
 
+    @Test
+    public void testCreateGameOnePlayer() throws Exception {
+        List<PlayerDto> playerDtos = new ArrayList<>();
+        playerDtos.add(new PlayerDto());
+        Exception exception = assertThrows(Exception.class, () -> gameService.createGame(playerDtos));
+        assertEquals("At least two players are required", exception.getMessage());
+    }
+
+    @Test
+    public void TestCreateGameValidPlayersDto() throws Exception {
+        List<PlayerDto> playerDtos = new ArrayList<>();
+        playerDtos.add(new PlayerDto("John", Color.BLUE));
+        playerDtos.add(new PlayerDto("Prem", Color.BLUE));
+        Dice dice = new Dice(UUID.randomUUID().toString(), 6);
+        when(diceRepo.save(any(Dice.class))).thenReturn(dice);
+        assertNotNull(gameService.createGame(playerDtos));
+    }
 }
