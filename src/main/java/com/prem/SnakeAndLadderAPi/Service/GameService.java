@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,6 +73,13 @@ public class GameService implements GameCreationStrategy {
         if (playerAfterMove.getPosition() == game.getBoard().getSize_of_board()) {
             gameOver(game, playerAfterMove);
             return GameConverter.EntityToDto(game);
+        }else {
+            Player player=game.getPlayers().stream().filter(new Predicate<Player>() {
+                @Override
+                public boolean test(Player player) {
+                    return player.getPlayerId().equals(playerAfterMove.getPlayerId());
+                }
+            }).findFirst().get();
         }
 
 return null;
@@ -79,7 +87,7 @@ return null;
 
     private void gameOver(Game game,Player player) {
         game.setWinner(player.getPlayerName());
-        gameHashMap.put(game.getGameId(),game);
+        gameHashMap.remove(game.getGameId());
     }
 
     private Player addPosition(Player player, int number, Game game) {
