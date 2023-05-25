@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class BoadService implements GameCreationStrategy {
+public class BoadService  {
     @Autowired
     BoardRepo boardRepo;
     @Autowired
@@ -87,5 +87,6 @@ public class BoadService implements GameCreationStrategy {
 
     private BoardDtoExit convertToDto(Board board, List<Player> playersList) {
         return BoardConvertor.EntityToDto(board, playersList.stream().map(PlayerConvertor::EntityToDto).collect(Collectors.toList()));
+
     }
 }
