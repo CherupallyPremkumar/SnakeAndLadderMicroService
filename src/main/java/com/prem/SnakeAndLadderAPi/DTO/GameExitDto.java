@@ -15,9 +15,15 @@ import java.util.List;
 @Builder
 @Getter
 @Setter
+@ToString
+@Component
+@NoArgsConstructor
+@AllArgsConstructor
 public class GameExitDto {
 
     String gameId;
+    Boolean status;
+    String winner;
     List<Player> players;
     Dice dice;
     Board board;

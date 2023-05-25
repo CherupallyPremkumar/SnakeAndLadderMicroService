@@ -9,6 +9,8 @@ public class GameConverter {
     public static GameExitDto EntityToDto(Game game){
        return GameExitDto.builder()
                 .gameId(game.getGameId())
+               .status(game.getStatus())
+               .winner(game.getWinner())
                 .board(game.getBoard())
                 .dice(game.getDice())
                 .players(game.getPlayers())

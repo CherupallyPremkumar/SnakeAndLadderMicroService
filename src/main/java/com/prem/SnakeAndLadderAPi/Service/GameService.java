@@ -16,6 +16,9 @@ import com.prem.SnakeAndLadderAPi.Repo.BoardRepo;
 import com.prem.SnakeAndLadderAPi.Repo.DiceRepo;
 import com.prem.SnakeAndLadderAPi.Repo.GameRepo;
 import com.prem.SnakeAndLadderAPi.Repo.PlayersRepo;
+import lombok.extern.log4j.Log4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,9 +28,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class GameService implements GameCreationStrategy {
-
+     static final Logger logger= LogManager.getLogger(GameService.class);
     HashMap<String, Game> gameHashMap = new HashMap<>();
-    HashMap<String, Game> playersHashMap = new HashMap<>();
     @Autowired
     DiceRepo diceRepo;
     @Autowired
@@ -38,6 +40,7 @@ public class GameService implements GameCreationStrategy {
     GameRepo gameRepo;
 
     public GameExitDto createGame(List<PlayerDto> playerDtos) throws InvalidGameException {
+        logger.info("entered create game method has entered");
         validatePlayers(playerDtos);
         List<Player> playerList = createPlayers(playerDtos);
         Dice dice = saveDice();
@@ -47,18 +50,28 @@ public class GameService implements GameCreationStrategy {
         gameHashMap.put(game.getGameId(), game);
         savePlayers(playerList);
         saveGame(game);
+        logger.info("Exiting  method from create game");
         return GameConverter.EntityToDto(game);
     }
 
     @Override
     public GameExitDto moveGame(GameDto gameDto) throws InvalidGameException {
+        logger.info("moveGame method called");
+        if((!gameHashMap.containsKey(gameDto.getGameId()))) throw new InvalidGameException("Game hasn't started");
         if (isGameCompleted(gameDto)) {
-            UpdateGame(gameDto);
+            logger.info("isGameCompleted method has entered and succed");
+          Game game=  UpdateGame(gameDto);
+          gameHashMap.replace(game.getGameId(),game);
+            logger.info("isGameCompleted method has over and exiting");
+          return GameConverter.EntityToDto(game);
         }
-        return null;
+        throw new InvalidGameException("Game has Over");
     }
 
-    private GameExitDto UpdateGame(GameDto gameDto) {
+
+
+    private Game UpdateGame(GameDto gameDto) {
+        logger.info("UpdateGAme method has entered succesfully");
         Game game = gameHashMap.get(gameDto.getGameId());
         int number = gameDto.getNumber();
 
@@ -67,30 +80,37 @@ public class GameService implements GameCreationStrategy {
                 .filter(player -> Objects.equals(player.getPlayerId(), gameDto.getPlayers().getPlayerId()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Player not found"));
+        logger.info("Player condition is running executed entered succesfully");
 
         Player playerAfterMove = addPosition(updatedPlayer, number, game);
 
-        if (playerAfterMove.getPosition() == game.getBoard().getSize_of_board()) {
-            gameOver(game, playerAfterMove);
-            return GameConverter.EntityToDto(game);
-        }else {
-            Player player=game.getPlayers().stream().filter(new Predicate<Player>() {
-                @Override
-                public boolean test(Player player) {
-                    return player.getPlayerId().equals(playerAfterMove.getPlayerId());
-                }
-            }).findFirst().get();
-        }
 
-return null;
+        if (playerAfterMove.getPosition() == game.getBoard().getSize_of_board()) {
+            logger.info("Condition is executed equals");
+            gameOver(game, playerAfterMove);
+            logger.info("Game has Ended Winner is:"+playerAfterMove.getPlayerName());
+            return game;
+        }else {
+           game.getPlayers()
+                   .stream()
+                   .filter(player -> player.getPlayerId().equals(playerAfterMove.getPlayerId()))
+                   .findFirst()
+                   .ifPresent(player -> player.setPosition(playerAfterMove.getPosition()));
+        }
+        logger.info("addPosition  has been updated and exiting ");
+
+return game;
     }
 
     private void gameOver(Game game,Player player) {
+        game.setStatus(false);
         game.setWinner(player.getPlayerName());
         gameHashMap.remove(game.getGameId());
+        gameRepo.save(game);
     }
 
     private Player addPosition(Player player, int number, Game game) {
+        logger.info("addPosition method  is running entered succesfully");
         int afterAdd = player.getPosition() + number;
         if (afterAdd <= game.getBoard().getSize_of_board()) {
             player.setPosition(afterAdd);
@@ -98,8 +118,7 @@ return null;
         return player;
     }
 
-    private void responseThisPlayerISWinner(Player player) {
-    }
+
 
 
     private boolean isGameCompleted(GameDto gameDto) throws InvalidGameException {
