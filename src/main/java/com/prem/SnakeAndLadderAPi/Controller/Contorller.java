@@ -10,6 +10,7 @@ import com.prem.SnakeAndLadderAPi.Service.BoadService;
 import com.prem.SnakeAndLadderAPi.Service.GameCreationStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,7 +26,7 @@ public class Contorller {
     public GameExitDto CreateGame(@RequestBody List<PlayerDto> playersDto) throws Exception {
         return boadService.createGame(playersDto);
     }
-    @PostMapping("/moveGame")
+    @PutMapping("/moveGame")
     public  GameExitDto moveGame(@RequestBody GameDto gameDto) throws InvalidGameException {
         return boadService.moveGame(gameDto);
     }

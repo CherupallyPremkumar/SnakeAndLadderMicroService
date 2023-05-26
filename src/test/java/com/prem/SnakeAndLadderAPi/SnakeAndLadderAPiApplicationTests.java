@@ -13,6 +13,7 @@ import com.prem.SnakeAndLadderAPi.Repo.GameRepo;
 import com.prem.SnakeAndLadderAPi.Repo.PlayersRepo;
 import com.prem.SnakeAndLadderAPi.Service.BoadService;
 import com.prem.SnakeAndLadderAPi.Service.GameService;
+import com.prem.SnakeAndLadderAPi.Service.SendAndResponseService;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +37,10 @@ import static org.mockito.Mockito.any;
 
 @SpringBootTest
 class SnakeAndLadderAPiApplicationTests {
+    @Mock
+    KafkaTemplate<Object,Object> kafkaTemplate;
+    @Mock
+    SendAndResponseService sendAndResponseService;
     @InjectMocks
     BoadService boadService;
     @Mock
@@ -50,13 +56,9 @@ class SnakeAndLadderAPiApplicationTests {
      @Autowired
     GameExitDto gameExitDto;
     List<PlayerDto> playerDtos = new ArrayList<>();
-    Player prem;
-    Player vaishnavi;
-
 
     public void setup() {
         MockitoAnnotations.openMocks(this);
-
     }
     @BeforeEach
 public void befor()
@@ -65,6 +67,7 @@ public void befor()
     playerDtos.add(new PlayerDto("Prem", Color.RED));
     playerDtos.add(new PlayerDto("Shivani", Color.GREEN));
     playerDtos.add(new PlayerDto("Bhanu", Color.ORANGE));
+    playerDtos.add(new PlayerDto("Biswajit", Color.PINK));
 }
 
     @Test
@@ -128,7 +131,7 @@ public void befor()
                GameDto gameDto=new GameDto();
                gameDto.setGameId(this.gameExitDto.getGameId());
                gameDto.setPlayers(player);
-               gameDto.setNumber(random.nextInt(6));
+               gameDto.setNumber(random.nextInt(1,6));
               g=gameService.moveGame(gameDto);
                System.out.println(g.toString());
                if (!g.getStatus()) break;
