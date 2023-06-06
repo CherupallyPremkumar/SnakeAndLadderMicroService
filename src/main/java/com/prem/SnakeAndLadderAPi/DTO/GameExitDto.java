@@ -10,6 +10,7 @@ import jakarta.persistence.OneToOne;
 import lombok.*;
 import org.springframework.stereotype.Component;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Builder
@@ -19,7 +20,7 @@ import java.util.List;
 @Component
 @NoArgsConstructor
 @AllArgsConstructor
-public class GameExitDto {
+public class GameExitDto implements Serializable {
 
     String gameId;
     Boolean status;

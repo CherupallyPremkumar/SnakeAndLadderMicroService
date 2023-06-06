@@ -19,7 +19,7 @@ import com.prem.SnakeAndLadderAPi.Repo.PlayersRepo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -28,11 +28,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class GameService implements GameCreationStrategy {
-
+@Primary
+public class RedisGameImplementation implements GameCreationStrategy {
+    static final String HASH_KEY = "GAME";
     static final Logger logger = LogManager.getLogger(GameService.class);
-    HashMap<String, Game> gameHashMap = new HashMap<>();
-
+    //HashMap<String, Game> gameHashMap = new HashMap<>();
+    @Autowired
+    RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private DiceRepo diceRepo;
     @Autowired
@@ -42,7 +44,6 @@ public class GameService implements GameCreationStrategy {
     @Autowired
     private GameRepo gameRepo;
     @Autowired(required = true)
-
     static final String TOPIC = "quickstart-events";
     @Autowired
     KafkaTemplate<Object, Game> kafkaTemplate;
@@ -54,6 +55,7 @@ public class GameService implements GameCreationStrategy {
             kafkaTemplate.send(TOPIC, msg);
         }
     }
+
     public synchronized GameExitDto createGame(List<PlayerDto> playerDtos) throws InvalidGameException {
 
         logger.info("entered create game method has entered");
@@ -63,7 +65,7 @@ public class GameService implements GameCreationStrategy {
         Board board = createBoard(dice);
         saveBoard(board);
         Game game = createGame(dice, board, playerList);
-        gameHashMap.put(game.getGameId(), game);
+        redisTemplate.opsForHash().put(HASH_KEY, game.getGameId(), game);
         savePlayers(playerList);
         saveGame(game);
         logger.info("Exiting  method from create game");
@@ -73,11 +75,14 @@ public class GameService implements GameCreationStrategy {
     @Override
     public synchronized GameExitDto moveGame(GameDto gameDto) throws InvalidGameException {
         logger.info("moveGame method called");
-        if ((!gameHashMap.containsKey(gameDto.getGameId()))) throw new InvalidGameException("Game hasn't started");
+        System.out.println(gameDto.getGameId());
+        Game game1 = (Game) redisTemplate.opsForHash().get(HASH_KEY, gameDto.getGameId());
+        System.out.println(game1);
+        if (game1 == null) throw new InvalidGameException("NO Game with the ID");
         if (isGameCompleted(gameDto)) {
             logger.info("isGameCompleted method has entered and succed");
             Game game = UpdateGame(gameDto);
-            gameHashMap.replace(game.getGameId(), game);
+            redisTemplate.opsForHash().put("GAME", game.getGameId(), game);
             logger.info("isGameCompleted method has over and exiting");
             return GameConverter.EntityToDto(game);
         }
@@ -86,7 +91,7 @@ public class GameService implements GameCreationStrategy {
 
     private Game UpdateGame(GameDto gameDto) {
         logger.info("UpdateGAme method has entered succesfully");
-        Game game = gameHashMap.get(gameDto.getGameId());
+        Game game = (Game) redisTemplate.opsForHash().get(HASH_KEY, gameDto.getGameId());
         int number = gameDto.getNumber();
 
         Player updatedPlayer = game.getPlayers()
@@ -98,18 +103,19 @@ public class GameService implements GameCreationStrategy {
 
         Player playerAfterMove = addPosition(updatedPlayer, number, game);
 
-
         if (playerAfterMove.getPosition() == game.getBoard().getSize_of_board()) {
             logger.info("Condition is executed equals");
             gameOver(game, playerAfterMove);
             logger.info("Game has Ended Winner is:" + playerAfterMove.getPlayerName());
             return game;
         } else {
+            logger.info("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
             game.getPlayers()
                     .stream()
                     .filter(player -> player.getPlayerId().equals(playerAfterMove.getPlayerId()))
                     .findFirst()
                     .ifPresent(player -> player.setPosition(playerAfterMove.getPosition()));
+            logger.info("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
         }
         logger.info("addPosition  has been updated and exiting ");
 
@@ -119,23 +125,27 @@ public class GameService implements GameCreationStrategy {
     private void gameOver(Game game, Player player) {
         game.setStatus(false);
         game.setWinner(player.getPlayerName());
-        gameHashMap.remove(game.getGameId());
+        redisTemplate.opsForHash().delete(game.getGameId(), HASH_KEY);
         gameRepo.save(game);
-       sendMessage(game);
+        sendMessage(game);
     }
 
     private Player addPosition(Player player, int number, Game game) {
         logger.info("addPosition method  is running entered succesfully");
+        logger.info("addPosition method  is running entered succesfully " + player.getPosition());
         int afterAdd = player.getPosition() + number;
+        logger.info("afterAdd" + afterAdd);
         if (afterAdd <= game.getBoard().getSize_of_board()) {
             player.setPosition(afterAdd);
+            logger.info("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         }
+        logger.info("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
         return player;
     }
 
 
     private boolean isGameCompleted(GameDto gameDto) throws InvalidGameException {
-        Game b = gameHashMap.get(gameDto.getGameId());
+        Game b = (Game) redisTemplate.opsForHash().get(HASH_KEY, gameDto.getGameId());
         if (b.getStatus() == null) throw new InvalidGameException("Game hasn't Created");
         else return b.getStatus();
     }
