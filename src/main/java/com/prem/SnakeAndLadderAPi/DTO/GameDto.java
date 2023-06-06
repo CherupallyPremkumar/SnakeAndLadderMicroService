@@ -6,11 +6,12 @@ import com.prem.SnakeAndLadderAPi.Pojo.Player;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.util.List;
 @Getter
 @Setter
 
-public class GameDto {
+public class GameDto implements Serializable {
     String gameId;
     Player players;
     int number;

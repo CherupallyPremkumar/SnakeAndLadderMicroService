@@ -3,6 +3,7 @@ package com.prem.SnakeAndLadderAPi.Pojo;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 @Entity
 @NoArgsConstructor
@@ -10,7 +11,7 @@ import java.util.List;
 @Builder
 @Getter
 @Setter
-public class Game {
+public class Game implements Serializable {
     @Id
     String gameId;
     Boolean status;

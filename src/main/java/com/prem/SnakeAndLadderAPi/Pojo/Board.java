@@ -3,6 +3,7 @@ package com.prem.SnakeAndLadderAPi.Pojo;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Entity
@@ -11,7 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Board {
+public class Board implements Serializable {
     @Id
     String boardId;
     int size_of_board;

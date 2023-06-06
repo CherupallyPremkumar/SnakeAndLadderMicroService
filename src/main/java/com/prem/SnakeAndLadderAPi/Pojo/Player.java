@@ -3,6 +3,8 @@ package com.prem.SnakeAndLadderAPi.Pojo;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
+
 @Entity
 @Builder
 @Getter
@@ -10,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class Player {
+public class Player implements Serializable {
     @Id
     String playerId;
     String playerName;
